@@ -55,15 +55,21 @@ async def reply(request: Request, Body: str = Form()):
 
     merged_answer = ''.join(answer)  
 
-    try:
-        message = client.messages.create(
-        from_=f"whatsapp:{twilio_number}",
-        body=f"AI: {merged_answer}",
-        to=f"whatsapp:{whatsapp_number}"
-        )
-        print(f"Message sent to {whatsapp_number}: {message.body}")
-        print(conversation_ids)
-    except Exception as e:
-        print(f"Error sending message to {whatsapp_number}: {e}")
+    try:  
+        # Split the message into smaller parts if it's too long  
+        message_parts = [merged_answer[i:i + 1590] for i in range(0, len(merged_answer), 1590)]  
+    
+        for part in message_parts:  
+            message = client.messages.create(  
+                from_=f"whatsapp:{twilio_number}",  
+                body=f"AI: {part}",  
+                to=f"whatsapp:{whatsapp_number}"  
+            )  
+            print(f"Message part sent to {whatsapp_number}: {message.body}")  
+    
+        print(conversation_ids)  
+    except Exception as e:  
+        print(f"Error sending message to {whatsapp_number}: {e}")  
+
 
     return ""
