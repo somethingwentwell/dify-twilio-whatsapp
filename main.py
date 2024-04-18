@@ -13,6 +13,7 @@ client = Client(account_sid, auth_token)
 twilio_number = config('TWILIO_NUMBER')
 dify_url = config('DIFY_URL')
 dify_api_key = config('DIFY_API_KEY')
+conversation_ids = {}
 
 @app.get("/")
 async def index():
@@ -21,9 +22,7 @@ async def index():
 
 @app.post("/message")
 async def reply(request: Request, Body: str = Form()):
-    print(Body)
     form_data = await request.form()
-    print(form_data)
     whatsapp_number = form_data['From'].split("whatsapp:")[-1]
     url = dify_url
     headers = {  
@@ -34,7 +33,7 @@ async def reply(request: Request, Body: str = Form()):
         'inputs': {},  
         'query': Body,  
         'response_mode': 'streaming',  
-        'conversation_id': '',  
+        'conversation_id': conversation_ids.get(whatsapp_number, ''),  
         'user': whatsapp_number,  
     }  
     response = requests.post(url, headers=headers, data=json.dumps(data), stream=True)  
@@ -45,10 +44,13 @@ async def reply(request: Request, Body: str = Form()):
             if decoded_line.startswith('data: '):  
                 decoded_line = decoded_line[6:]  
             try:  
-                json_line = json.loads(decoded_line)  
-                if json_line["event"] == "agent_message":  
-                    answer.append(json_line["answer"])  
-            except json.JSONDecodeError:   
+                json_line = json.loads(decoded_line) 
+                if "conversation_id" in json_line:
+                    conversation_ids[whatsapp_number] = json_line["conversation_id"]
+                if json_line["event"] == "agent_thought":  
+                    answer.append(json_line["thought"])  
+            except json.JSONDecodeError: 
+                print(json_line)  
                 continue  
 
     merged_answer = ''.join(answer)  
@@ -60,6 +62,7 @@ async def reply(request: Request, Body: str = Form()):
         to=f"whatsapp:{whatsapp_number}"
         )
         print(f"Message sent to {whatsapp_number}: {message.body}")
+        print(conversation_ids)
     except Exception as e:
         print(f"Error sending message to {whatsapp_number}: {e}")
 
