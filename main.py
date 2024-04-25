@@ -14,6 +14,8 @@ twilio_number = config('TWILIO_NUMBER')
 dify_url = config('DIFY_URL')
 dify_api_key = config('DIFY_API_KEY')
 conversation_ids = {}
+# List of enrolled WhatsApp numbers
+enrolled_numbers = ['+14155238886']
 
 @app.get("/")
 async def index():
@@ -24,6 +26,16 @@ async def index():
 async def reply(request: Request, Body: str = Form()):
     form_data = await request.form()
     whatsapp_number = form_data['From'].split("whatsapp:")[-1]
+
+    # Check if the number is enrolled
+    if whatsapp_number not in enrolled_numbers:
+        message = client.messages.create(  
+            from_=f"whatsapp:{twilio_number}",  
+            body="You are not enrolled in this service.",  
+            to=f"whatsapp:{whatsapp_number}"  
+        )
+        return ""
+
     url = dify_url
     headers = {  
         'Content-Type': 'application/json',  
