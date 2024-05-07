@@ -1,5 +1,7 @@
 # Third-party imports
 from fastapi import FastAPI, Form, Depends, Request
+from pydantic import BaseModel
+from twilio.twiml.messaging_response import MessagingResponse
 from twilio.rest import Client
 from decouple import config
 import requests  
@@ -21,6 +23,18 @@ enrolled_numbers = ['+14155238886']
 async def index():
     return {"msg": "working"}
 
+class Item(BaseModel):
+    Body: str
+    Body: str
+
+@app.post("/sms")
+async def receive_sms(item: Item):
+    # resp = MessagingResponse()
+    print(item)
+    # Add a message
+    # resp.message("The Robots are coming! Head for the hills!")
+
+    return ""
 
 @app.post("/message")
 async def reply(request: Request, Body: str = Form()):
